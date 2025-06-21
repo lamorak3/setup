@@ -1,0 +1,84 @@
+{
+  "layer": "top",
+  "position": "top",
+  "modules-left": [
+    "hyprland/workspaces",
+    "custom/music",
+  ],
+  "modules-center": ["clock"],
+  "modules-right": [
+    "pulseaudio",
+    "backlight",
+    "battery",
+    "network",
+    "cpu",
+    "memory",
+    "tray",
+  ],
+  "hyprland/workspaces": {
+    "format": "{name}: {icon}",
+    "format-icons": {
+      "active": "",
+      "default": ""
+    },
+    "all-outputs": true,
+  },
+  "tray": {
+    "icon-size": 21,
+    "spacing": 10,
+  },
+  "custom/music": {
+    "format": " {}",
+    "escape": true,
+    "interval": 5,
+    "tooltip": false,
+    "exec": "playerctl metadata --player='spotify' --format='{{ artist }} - {{ title }}'",
+    "on-click": "playerctl play-pause --player='spotify'",
+    "max-length": 30
+  },
+  "clock": {
+    "timezone": "Asia/Tbilisi",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    "format": "{:%d %h, %a - %H:%M}"
+  },
+  "network": {
+    "format-wifi": "󰤢 ",
+    "format-ethernet": "󰈀 ",
+    "format-disconnected": "󰤠 ",
+    "interval": 5,
+    "tooltip": false
+  },
+  "cpu": {
+    "interval": 1,
+    "format": "  {icon0}{icon1}{icon2}{icon3} {usage:>2}%",
+    "format-icons": ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+  },
+  "memory": {
+    "interval": 30,
+    "format": "  {used:0.1f}G/{total:0.1f}G"
+  },
+  "battery": {
+    "interval": 60,
+    "states": {
+	    "warning": 30,
+	    "critical": 15
+    },
+    "format": "{icon} {capacity}%",
+    "format-icons": ["󰁺", "󰁻", "󰁼", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+    "format-charging": "{icon}󱐋{capacity}%",
+    "max-length": 25
+  },
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-muted": "",
+    "format-icons": {
+      "default": ["", "", " "]
+    },
+    "on-click": "pavucontrol"
+  },
+  "custom/lock": {
+    "tooltip": false,
+    "on-click": "sh -c '(sleep 0.5s; hyprlock)' & disown",
+    "format": ""
+  }
+}
