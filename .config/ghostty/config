@@ -20,19 +20,23 @@
 # # The config file consists of simple key-value pairs,
 # # separated by equals signs.
 font-family = JetBrainsMono Nerd Font
-font-size = 16
+font-size = 14
 
-theme = ayu
+theme = Ayu Old
 
 cursor-style = block
 cursor-style-blink = false
 shell-integration-features = no-cursor
 
-background-opacity = 0.95
+background-opacity = 0.90
 
 keybind = ctrl+shift+w=close_surface
+keybind = ctrl+shift+up=goto_split:up
+keybind = ctrl+shift+down=goto_split:down
+keybind = ctrl+backspace=text:\x1b\x7f
 window-padding-y = 8
 window-padding-x = 4
+
 #
 # # Spacing around the equals sign does not matter.
 # # All of these are identical:

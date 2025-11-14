@@ -1,6 +1,6 @@
 * {
-  font-family: JetbrainsMono Nerd Font;
-  font-size: 20px;
+  font-family: "Material Symbols Rounded", "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
+  font-size: 15px;
   min-height: 0;
   padding-right: 2px;
   padding-left: 2px;
@@ -10,12 +10,12 @@
 #waybar {
   background: transparent;
   color: #c6d0f5;
-  margin: 2px 2px;
+  margin: 2px 0;
 }
 
 #workspaces {
   border-radius: 5px;
-  margin: 5px;
+  margin: 3px;
   margin-right: 25px;
   background: #101010;
   margin-left: 1rem;
@@ -110,4 +110,19 @@
   margin-right: 1rem;
   margin-left: 1rem;
   border-radius: 5px;
+}
+
+#tray menu {
+  background-color: #101010;
+  color: #babbf1;
+}
+
+#tray menu menuitem {
+  padding-bottom: 5px;
+  border-top: 0;
+}
+
+#tray menu menuitem:hover {
+  background-color: #babbf1;
+  color: #101010;
 }

@@ -7,6 +7,12 @@ vim.g.maplocalleader = " "
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
 
+vim.g.dbs = {
+	{ name = "prod", url = "postgresql://postgres:Aa1123456789@localhost:5434/dailo_api_db" },
+	{ name = "dev", url = "postgresql://postgres:0SR83X3r|79x2g+s@localhost:5433/dailo_api_db" },
+	{ name = "local", url = "postgresql://postgres:Danzig12#@localhost:5432/dailo_api_db" },
+}
+
 -- [[ Setting options ]]
 -- See `:help vim.opt`
 -- NOTE: You can change these options as you wish!
@@ -20,13 +26,17 @@ vim.opt.number = true
 
 vim.opt.tabstop = 4
 vim.opt.shiftwidth = 4
-vim.opt.expandtab = true
+vim.opt.expandtab = false
 vim.opt.softtabstop = 4
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = "a"
 
 -- Don't show the mode, since it's already in the status line
 vim.opt.showmode = false
+
+vim.opt.termguicolors = true
+-- vim.api.nvim_set_option_value("colorcolumn", "80", {})
+--
 -- Sync clipboard between OS and Neovim.
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
 --  Remove this option if you want your OS clipboard to remain independent.
@@ -131,6 +141,19 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	end,
 })
 
+-- vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+-- 	pattern = "*.html",
+-- 	callback = function()
+-- 		local file_ext = vim.fn.expand("%:e")
+-- 		if file_ext == "html" then
+-- 			if vim.fn.search("{{", "nw") ~= 0 then
+-- 				vim.bo.filetype = "gotmpl"
+-- 			end
+-- 		end
+-- 	end,
+-- 	group = vim.api.nvim_create_augroup("filetypedetect", { clear = true }),
+-- })
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -206,6 +229,23 @@ require("lazy").setup({
 	--
 	-- Then, because we use the `opts` key (recommended), the configuration runs
 	-- after the plugin has been loaded as `require(MODULE).setup(opts)`.
+	{
+		"kristijanhusak/vim-dadbod-ui",
+		dependencies = {
+			{ "tpope/vim-dadbod", lazy = true },
+			{ "kristijanhusak/vim-dadbod-completion", ft = { "sql", "mysql", "plsql" }, lazy = true }, -- Optional
+		},
+		cmd = {
+			"DBUI",
+			"DBUIToggle",
+			"DBUIAddConnection",
+			"DBUIFindBuffer",
+		},
+		init = function()
+			-- Your DBUI configuration
+			vim.g.db_ui_use_nerd_fonts = 1
+		end,
+	},
 
 	{ -- Useful plugin to show you pending keybinds.
 		"folke/which-key.nvim",
@@ -270,6 +310,34 @@ require("lazy").setup({
 		"windwp/nvim-autopairs",
 		event = "InsertEnter",
 		config = true,
+	},
+	{
+		"dmtrKovalenko/fff.nvim",
+		build = function()
+			-- this will download prebuild binary or try to use existing rustup toolchain to build from source
+			-- (if you are using lazy you can use gb for rebuilding a plugin if needed)
+			require("fff.download").download_or_build_binary()
+		end,
+		-- if you are using nixos
+		-- build = "nix run .#release",
+		opts = { -- (optional)
+			debug = {
+				enabled = true, -- we expect your collaboration at least during the beta
+				show_scores = true, -- to help us optimize the scoring system, feel free to share your scores!
+			},
+		},
+		-- No need to lazy-load with lazy.nvim.
+		-- This plugin initializes itself lazily.
+		lazy = false,
+		keys = {
+			{
+				"ff",
+				function()
+					require("fff").find_files()
+				end,
+				desc = "FFFind files",
+			},
+		},
 	},
 	{ -- Fuzzy Finder (files, lsp, etc)
 		"nvim-telescope/telescope.nvim",
@@ -418,16 +486,17 @@ require("lazy").setup({
 			-- (sometimes called LSP servers, but that's kind of like ATM Machine) are standalone
 			-- processes that communicate with some "client" - in this case, Neovim!
 
-			require("lspconfig").pyright.setup({
-				settings = {
-					python = {
-						analysis = {
-							typeCheckingMode = "basic",
-							autoSearchPaths = true,
-						},
-					},
-				},
-			})
+			-- require("lspconfig").pyright.setup({
+			-- 	settings = {
+			-- 		python = {
+			-- 			analysis = {
+			-- 				typeCheckingMode = "basic",
+			-- 				autoSearchPaths = true,
+			-- 			},
+			-- 		},
+			-- 	},
+			-- })
+
 			-- LSP provides Neovim with features like:
 			--  - Go to definition
 			--  - Find references
@@ -570,7 +639,7 @@ require("lazy").setup({
 					source = "if_many",
 					close_events = { "CursorMoved", "CursorMovedI", "BufHidden", "InsertCharPre", "WinLeave" },
 				},
-				underline = { severity = vim.diagnostic.severity.ERROR },
+				underline = true, --{ severity = vim.diagnostic.severity.ERROR },
 				signs = vim.g.have_nerd_font and {
 					text = {
 						[vim.diagnostic.severity.ERROR] = "󰅚 ",
@@ -579,7 +648,7 @@ require("lazy").setup({
 						[vim.diagnostic.severity.HINT] = "󰌶 ",
 					},
 				} or {},
-				virtual_text = false,
+				virtual_text = true,
 				-- virtual_text = {
 				-- 	source = "if_many",
 				-- 	spacing = 2,
@@ -623,16 +692,16 @@ require("lazy").setup({
 				-- But for many setups, the LSP (`ts_ls`) will work just fine
 				-- ts_ls = {},
 				--
-				pyright = {
-					settings = {
-						python = {
-							analysis = {
-								typeCheckingMode = "basic",
-								autoSearchPaths = true,
-							},
-						},
-					},
-				},
+				-- pyright = {
+				-- 	settings = {
+				-- 		python = {
+				-- 			analysis = {
+				-- 				typeCheckingMode = "basic",
+				-- 				autoSearchPaths = true,
+				-- 			},
+				-- 		},
+				-- 	},
+				-- },
 				lua_ls = {
 					-- cmd = { ... },
 					-- filetypes = { ... },
@@ -669,7 +738,7 @@ require("lazy").setup({
 			require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
 			require("mason-lspconfig").setup({
-				ensure_installed = { "tailwindcss" }, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
+				ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
 				automatic_installation = false,
 				automatic_enable = true,
 				handlers = {
@@ -719,15 +788,15 @@ require("lazy").setup({
 			formatters_by_ft = {
 				lua = { "stylua" },
 				go = { "gofumpt" },
+				csharp = { "csharpier" },
 				-- Conform can also run multiple formatters sequentially
-				python = { "isort", "pyright" },
+				python = { "ruff", "isort" },
 				--
 				-- You can use 'stop_after_first' to run the first available formatter from the list
 				-- javascript = { "prettierd", "prettier", stop_after_first = true },
 			},
 		},
 	},
-
 	{ -- Autocompletion
 		"saghen/blink.cmp",
 		event = "VimEnter",
@@ -746,17 +815,7 @@ require("lazy").setup({
 					end
 					return "make install_jsregexp"
 				end)(),
-				dependencies = {
-					-- `friendly-snippets` contains a variety of premade snippets.
-					--    See the README about individual language/framework/plugin snippets:
-					--    https://github.com/rafamadriz/friendly-snippets
-					-- {
-					--   'rafamadriz/friendly-snippets',
-					--   config = function()
-					--     require('luasnip.loaders.from_vscode').lazy_load()
-					--   end,
-					-- },
-				},
+				dependencies = {},
 				opts = {},
 			},
 			"folke/lazydev.nvim",
@@ -806,7 +865,11 @@ require("lazy").setup({
 
 			sources = {
 				default = { "lsp", "path", "snippets", "lazydev" },
+				per_filetype = {
+					sql = { "snippets", "dadbod", "buffer" },
+				},
 				providers = {
+					dadbod = { name = "Dadbod", module = "vim_dadbod_completion.blink" },
 					lazydev = { module = "lazydev.integrations.blink", score_offset = 100 },
 				},
 			},
@@ -846,7 +909,45 @@ require("lazy").setup({
 			-- Load the colorscheme here.
 			-- Like many other themes, this one has different styles, and you could load
 			-- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-			vim.cmd.colorscheme("tokyonight-night")
+			vim.cmd("colorscheme tokyonight-night")
+
+			-- vim.api.nvim_set_hl(0, "String", { fg = "#5ad664" })
+			-- vim.api.nvim_set_hl(0, "@variable", { fg = "#e3e1e1" })
+			-- vim.api.nvim_set_hl(0, "@variable.parameter", { fg = "#e07468" })
+			-- vim.api.nvim_set_hl(0, "@punctuation.delimiter", { fg = "#e3e1e1" })
+			-- vim.api.nvim_set_hl(0, "@module.python", { link = "@variable" })
+		end,
+	},
+	{
+		"scottmckendry/cyberdream.nvim",
+		lazy = false,
+		priority = 1000,
+		opts = {
+			transparent = true,
+			borderless_pickers = false,
+			saturation = 0.95,
+			cache = true,
+		},
+		init = function()
+			-- vim.cmd("colorscheme cyberdream")
+
+			-- vim.api.nvim_set_hl(0, "String", { fg = "#3fbf4a" })
+			-- vim.api.nvim_set_hl(0, "String", { fg = "#5ad664" })
+			-- vim.api.nvim_set_hl(0, "Boolean", { fg = "#fa62a0" })
+			-- vim.api.nvim_set_hl(0, "Operator", { fg = "#fabc62" })
+			-- vim.api.nvim_set_hl(0, "Special", { fg = "#c189e8" })
+			-- vim.api.nvim_set_hl(0, "Type", { fg = "#c74e58" })
+			-- vim.api.nvim_set_hl(0, "TroubleNormal", { bg = "none", ctermbg = "none" })
+			-- vim.api.nvim_set_hl(0, "TroubleNormalNC", { bg = "none", ctermbg = "none" })
+			-- vim.api.nvim_set_hl(0, "TroubleNormal", { bg = "none", ctermbg = "none" })
+			-- vim.api.nvim_set_hl(0, "TroubleNormalNC", { bg = "none", ctermbg = "none" })
+			-- vim.api.nvim_set_hl(0, "WinSeparator", { fg = "#3c4048", bg = "none" })
+			-- vim.api.nvim_set_hl(0, "TreesitterContext", { bg = "#232429" })
+			-- vim.api.nvim_set_hl(0, "TreesitterContextLineNumber", { bg = "#232429" })
+			-- vim.api.nvim_set_hl(0, "TreesitterContextBottom", { bg = "#232429", underline = true })
+			vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#ffffff" })
+			-- vim.api.nvim_set_hl(0, "@module.python", { link = "@variable" })
+			-- vim.api.nvim_set_hl(0, "@constructor.python", { link = "Type" })
 		end,
 	},
 
@@ -869,13 +970,6 @@ require("lazy").setup({
 			--  - ci'  - [C]hange [I]nside [']quote
 			require("mini.ai").setup({ n_lines = 500 })
 
-			-- Add/delete/replace surroundings (brackets, quotes, etc.)
-			--
-			-- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
-			-- - sd'   - [S]urround [D]elete [']quotes
-			-- - sr)'  - [S]urround [R]eplace [)] [']
-			require("mini.surround").setup()
-
 			-- Simple and easy statusline.
 			--  You could remove this setup call if you don't like it,
 			--  and try some other statusline plugin
@@ -890,7 +984,6 @@ require("lazy").setup({
 			statusline.section_location = function()
 				return "%2l:%-2v"
 			end
-
 			-- ... and there is more!
 			--  Check out: https://github.com/echasnovski/mini.nvim
 		end,
@@ -905,6 +998,8 @@ require("lazy").setup({
 				"bash",
 				"c",
 				"diff",
+				"go",
+				"gotmpl",
 				"html",
 				"lua",
 				"luadoc",
