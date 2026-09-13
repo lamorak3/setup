@@ -314,12 +314,9 @@ require("lazy").setup({
 	{
 		"dmtrKovalenko/fff.nvim",
 		build = function()
-			-- this will download prebuild binary or try to use existing rustup toolchain to build from source
-			-- (if you are using lazy you can use gb for rebuilding a plugin if needed)
 			require("fff.download").download_or_build_binary()
 		end,
-		-- if you are using nixos
-		-- build = "nix run .#release",
+
 		opts = { -- (optional)
 			debug = {
 				enabled = true, -- we expect your collaboration at least during the beta
@@ -336,6 +333,38 @@ require("lazy").setup({
 					require("fff").find_files()
 				end,
 				desc = "FFFind files",
+			},
+			{
+				"fs",
+				function()
+					require("fff").find_files_in_dir("~/.config/nvim/")
+				end,
+				desc = "FFFind in source files",
+			},
+			{
+				"fg",
+				function()
+					require("fff").live_grep()
+				end,
+				desc = "LiFFFe grep",
+			},
+			{
+				"fz",
+				function()
+					require("fff").live_grep({
+						grep = {
+							modes = { "fuzzy", "plain" },
+						},
+					})
+				end,
+				desc = "Live fffuzy grep",
+			},
+			{
+				"fc",
+				function()
+					require("fff").live_grep({ query = vim.fn.expand("<cword>") })
+				end,
+				desc = "Search current word",
 			},
 		},
 	},
@@ -790,7 +819,7 @@ require("lazy").setup({
 				go = { "gofumpt" },
 				csharp = { "csharpier" },
 				-- Conform can also run multiple formatters sequentially
-				python = { "ruff", "isort" },
+				python = { "ruff_fix", "ruff_format", "ruff_organize_imports" },
 				--
 				-- You can use 'stop_after_first' to run the first available formatter from the list
 				-- javascript = { "prettierd", "prettier", stop_after_first = true },
@@ -909,7 +938,7 @@ require("lazy").setup({
 			-- Load the colorscheme here.
 			-- Like many other themes, this one has different styles, and you could load
 			-- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-			vim.cmd("colorscheme tokyonight-night")
+			-- vim.cmd("colorscheme tokyonight-night")
 
 			-- vim.api.nvim_set_hl(0, "String", { fg = "#5ad664" })
 			-- vim.api.nvim_set_hl(0, "@variable", { fg = "#e3e1e1" })
@@ -919,35 +948,15 @@ require("lazy").setup({
 		end,
 	},
 	{
-		"scottmckendry/cyberdream.nvim",
+		"metalelf0/jellybeans-nvim",
 		lazy = false,
 		priority = 1000,
-		opts = {
-			transparent = true,
-			borderless_pickers = false,
-			saturation = 0.95,
-			cache = true,
-		},
-		init = function()
-			-- vim.cmd("colorscheme cyberdream")
-
-			-- vim.api.nvim_set_hl(0, "String", { fg = "#3fbf4a" })
-			-- vim.api.nvim_set_hl(0, "String", { fg = "#5ad664" })
-			-- vim.api.nvim_set_hl(0, "Boolean", { fg = "#fa62a0" })
-			-- vim.api.nvim_set_hl(0, "Operator", { fg = "#fabc62" })
-			-- vim.api.nvim_set_hl(0, "Special", { fg = "#c189e8" })
-			-- vim.api.nvim_set_hl(0, "Type", { fg = "#c74e58" })
-			-- vim.api.nvim_set_hl(0, "TroubleNormal", { bg = "none", ctermbg = "none" })
-			-- vim.api.nvim_set_hl(0, "TroubleNormalNC", { bg = "none", ctermbg = "none" })
-			-- vim.api.nvim_set_hl(0, "TroubleNormal", { bg = "none", ctermbg = "none" })
-			-- vim.api.nvim_set_hl(0, "TroubleNormalNC", { bg = "none", ctermbg = "none" })
-			-- vim.api.nvim_set_hl(0, "WinSeparator", { fg = "#3c4048", bg = "none" })
-			-- vim.api.nvim_set_hl(0, "TreesitterContext", { bg = "#232429" })
-			-- vim.api.nvim_set_hl(0, "TreesitterContextLineNumber", { bg = "#232429" })
-			-- vim.api.nvim_set_hl(0, "TreesitterContextBottom", { bg = "#232429", underline = true })
-			vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#ffffff" })
-			-- vim.api.nvim_set_hl(0, "@module.python", { link = "@variable" })
-			-- vim.api.nvim_set_hl(0, "@constructor.python", { link = "Type" })
+		dependencies = { "rktjmp/lush.nvim" },
+		transparent = true,
+		config = function()
+			vim.cmd("colorscheme jellybeans-nvim")
+			vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
+			vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
 		end,
 	},
 
@@ -991,10 +1000,11 @@ require("lazy").setup({
 	{ -- Highlight, edit, and navigate code
 		"nvim-treesitter/nvim-treesitter",
 		build = ":TSUpdate",
-		main = "nvim-treesitter.configs", -- Sets main module to use for opts
-		-- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-		opts = {
-			ensure_installed = {
+		branch = "main",
+		main = "nvim-treesitter",
+
+		init = function()
+			local ensureInstalled = {
 				"bash",
 				"c",
 				"diff",
@@ -1005,21 +1015,31 @@ require("lazy").setup({
 				"luadoc",
 				"markdown",
 				"markdown_inline",
+				"python",
 				"query",
+				"rust",
+				"sql",
 				"vim",
 				"vimdoc",
-			},
-			-- Autoinstall languages that are not installed
-			auto_install = true,
-			highlight = {
-				enable = true,
-				-- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-				--  If you are experiencing weird indenting issues, add the language to
-				--  the list of additional_vim_regex_highlighting and disabled languages for indent.
-				additional_vim_regex_highlighting = { "ruby" },
-			},
-			indent = { enable = true, disable = { "ruby" } },
-		},
+			}
+			local alreadyInstalled = require("nvim-treesitter.config").get_installed()
+			local parsersToInstall = vim.iter(ensureInstalled)
+				:filter(function(parser)
+					return not vim.tbl_contains(alreadyInstalled, parser)
+				end)
+				:totable()
+			require("nvim-treesitter").install(parsersToInstall)
+
+			vim.api.nvim_create_autocmd("FileType", {
+				callback = function()
+					-- Enable treesitter highlighting and disable regex syntax
+					pcall(vim.treesitter.start)
+					-- Enable treesitter-based indentation
+					vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+				end,
+			})
+			-- ...
+		end,
 		-- There are additional nvim-treesitter modules that you can use to interact
 		-- with nvim-treesitter. You should go explore a few and see what interests you:
 		--
@@ -1027,14 +1047,14 @@ require("lazy").setup({
 		--    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
 		--    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
 	},
-	{
-		"windwp/nvim-ts-autotag",
-		lazy = false,
-		dependencies = "nvim-treesitter/nvim-treesitter",
-		config = function()
-			require("nvim-ts-autotag").setup()
-		end,
-	},
+	-- {
+	-- 	"windwp/nvim-ts-autotag",
+	-- 	lazy = false,
+	-- 	dependencies = "nvim-treesitter/nvim-treesitter",
+	-- 	config = function()
+	-- 		require("nvim-ts-autotag").setup()
+	-- 	end,
+	-- },
 	-- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
 	-- init.lua. If you want these files, they are in the repository, so you can just download them and
 	-- place them in the correct locations.
